@@ -79,3 +79,12 @@ with app.app_context():
 def index():
     stocks = StockInventory.query.all() 
     return render_template('home.html', stocks=stocks)
+
+@app.route('/sell', methods=['GET', 'POST'])
+def sell():
+    if request.method == 'POST':
+        flash('Sell request received! This is only a test.')
+        return redirect(url_for('sell'))
+    
+    stocks = StockInventory.query.all() 
+    return render_template('sell_stock.html', stocks=stocks)
