@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+{% if customer %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Welcome, {{ customer.fullName }}</h1>
+    <form method="POST" action="{{ url_for('logout') }}">
+        <button type="submit" class="btn btn-outline-secondary">Log Out</button>
+    </form>
+</div>
+<p>Available funds: ${{ "%.2f"|format(customer.availableFunds) }}</p>
+<a href="{{ url_for('buy') }}" class="btn btn-primary mb-3">Buy Stocks</a>
+<a href="{{ url_for('sell') }}" class="btn btn-primary mb-3">Sell Stocks</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Ticker</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Available</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for stock in stocks %}
+        <tr>
+            <td>{{ stock.ticker }}</td>
+            <td>{{ stock.name }}</td>
+            <td>${{ "%.2f"|format(stock.currentMarketPrice) }}</td>
+            <td>{{ stock.quantity if stock.quantity is not none else 0 }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4" class="text-center">No stocks available</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <h1 class="mb-4">Log In</h1>
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Log In</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
