@@ -348,3 +348,41 @@ def admin_create_stock():
         'admin_create_stock.html',
         form_token=session['create_stock_token']
     )
+
+@app.route('/balance', methods=['GET', 'POST'])
+def balance():
+    customer = db.session.get(Customer, session['customer_id']) if 'customer_id' in session else None
+    if not customer:
+        flash('Please log in first', 'error')
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        try:
+            amount = float(request.form['updateFunds'])
+            update_type = request.form['updateType']
+
+            if amount <= 0:
+                flash('Enter a valid amount', 'error')
+                return redirect(url_for('balance'))
+
+            if update_type == 'Deposit':
+                customer.availableFunds += amount
+                flash('Funds deposited successfully!', 'success')
+            elif update_type == 'Withdraw':
+                if amount > customer.availableFunds:
+                    flash('Not enough funds in balance', 'error')
+                    return redirect(url_for('balance'))
+                customer.availableFunds -= amount
+                flash('Funds withdrawn successfully!', 'success')
+            else:
+                flash('Invalid transaction type', 'error')
+                return redirect(url_for('balance'))
+
+            db.session.commit()
+            return redirect(url_for('index'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating funds: {str(e)}', 'error')
+            return redirect(url_for('balance'))
+
+    return render_template('balance.html', customer=customer)
