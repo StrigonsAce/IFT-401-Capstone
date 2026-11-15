@@ -1,11 +1,29 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, session
+import os
+import secrets
+import re
+import math
+from datetime import datetime
+from sqlalchemy.engine import URL
+from dotenv import load_dotenv
+from flask import Flask, render_template, redirect, url_for, flash, request, session, abort
 from flask_sqlalchemy import SQLAlchemy
 
-app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://student:password@38.254.245.3:3306/projectdb'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'password'
+load_dotenv()
+
+app = Flask(__name__)
+app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
+
+app.config["SQLALCHEMY_DATABASE_URI"] = URL.create(
+    drivername="mysql+pymysql",
+    username=os.environ["DB_USER"],
+    password=os.environ["DB_PASSWORD"],
+    host=os.environ["DB_HOST"],
+    port=int(os.getenv("DB_PORT", "3306")),
+    database=os.environ["DB_NAME"],
+)
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
@@ -83,13 +101,27 @@ def index():
 
 @app.route('/login', methods=['POST'])
 def login():
+
+    admin = Administrator.query.filter_by(email=request.form['email']).first()
+
+    if admin and admin.adminPassword == request.form['password']:
+        session.clear()
+        session['admin_id'] = admin.adminID
+        session['role'] = 'admin'
+
+        flash(f'Welcome, {admin.fullName}!', 'success')
+        return redirect(url_for('admin_dashboard'))
+    
     customer = Customer.query.filter_by(email=request.form['email']).first()
     if customer and customer.custPassword == request.form['password']:
         session.clear()
         session['customer_id'] = customer.customerID
+        session['role'] = 'customer'
+
         flash(f'Welcome, {customer.fullName}!', 'success')
-    else:
-        flash('Invalid email or password', 'error')
+        return redirect(url_for('index'))
+    
+    flash('Invalid email or password', 'error')
     return redirect(url_for('index'))
 
 @app.route('/logout', methods=['POST'])
@@ -175,3 +207,144 @@ def sell():
             return redirect(url_for('sell'))
 
     return render_template('sell_stock.html', stocks=StockInventory.query.all())
+
+@app.route('/admin')
+def admin_dashboard():
+    if session.get('role') != 'admin' or 'admin_id' not in session:
+        flash('Administrator access required.', 'error')
+        return redirect(url_for('index'))
+
+    logged_admin = db.session.get(
+        Administrator, session['admin_id']
+    )
+
+    if logged_admin is None:
+        session.clear()
+        flash('Please log in again.', 'error')
+        return redirect(url_for('index'))
+
+    return render_template(
+        'admin_dashboard.html',
+        logged_admin=logged_admin
+    )
+
+@app.route('/admin/stocks/create', methods=['GET', 'POST'])
+def admin_create_stock():
+    # Check administrator access.
+    if session.get('role') != 'admin' or 'admin_id' not in session:
+        flash('Administrator access required.', 'error')
+        return redirect(url_for('index'))
+
+    admin = db.session.get(Administrator, session['admin_id'])
+
+    if admin is None:
+        session.clear()
+        return redirect(url_for('index'))
+
+    # Create a token for this form.
+    if 'create_stock_token' not in session:
+        session['create_stock_token'] = secrets.token_hex(32)
+
+    if request.method == 'POST':
+        submitted_token = request.form.get('_csrf', '')
+
+        if not secrets.compare_digest(
+            submitted_token,
+            session['create_stock_token']
+        ):
+            abort(400, description='Invalid form token. Reload the form.')
+
+        name = request.form.get('name', '').strip()
+        ticker = request.form.get('ticker', '').strip().upper()
+        description = request.form.get('description', '').strip()
+
+        # Validate text fields.
+        if not name or len(name) > 100:
+            flash('Enter a stock name of 1–100 characters.', 'error')
+            return redirect(url_for('admin_create_stock'))
+
+        if not re.fullmatch(r'[A-Z]{1,4}', ticker):
+            flash('Ticker must contain 1–4 letters.', 'error')
+            return redirect(url_for('admin_create_stock'))
+
+        if not description or len(description) > 255:
+            flash('Enter a company description of 1–255 characters.', 'error')
+            return redirect(url_for('admin_create_stock'))
+
+        # Validate numeric fields on the server.
+        try:
+            quantity = float(request.form.get('quantity', ''))
+            price = float(request.form.get('price', ''))
+        except (ValueError, OverflowError):
+            flash('Enter valid numbers for quantity and price.', 'error')
+            return redirect(url_for('admin_create_stock'))
+
+        if (
+            not math.isfinite(quantity)
+            or not math.isfinite(price)
+            or not 0 < quantity <= 99999999.99
+            or not 0 < price <= 99999999.99
+        ):
+            flash(
+                'Quantity and price must be greater than zero '
+                'and no more than 99,999,999.99.',
+                'error'
+            )
+            return redirect(url_for('admin_create_stock'))
+
+        try:
+            # Prevent duplicate tickers in normal form submissions.
+            existing_stock = StockInventory.query.filter_by(
+                ticker=ticker
+            ).first()
+
+            if existing_stock:
+                flash('A stock with that ticker already exists.', 'error')
+                return redirect(url_for('admin_create_stock'))
+
+            now = datetime.utcnow()
+
+            company = Company.query.filter_by(ticker=ticker).first()
+
+            # Reuse an existing company, or create a new one.
+            if company is None:
+                company = Company(
+                    createdAt=now,
+                    updatedAt=now,
+                    ticker=ticker,
+                    companyDescription=description
+                )
+                db.session.add(company)
+
+                # Get companyID before creating its stock.
+                db.session.flush()
+
+            stock = StockInventory(
+                companyID=company.companyID,
+                adminID=admin.adminID,
+                createdAt=now,
+                updatedAt=now,
+                name=name,
+                ticker=ticker,
+                quantity=quantity,
+                initStockPrice=price,
+                currentMarketPrice=price
+            )
+
+            db.session.add(stock)
+            db.session.commit()
+
+        except Exception:
+            db.session.rollback()
+            app.logger.exception('Stock creation failed')
+            flash('Could not create the stock. Check the server log.', 'error')
+            return redirect(url_for('admin_create_stock'))
+
+        session.pop('create_stock_token', None)
+        flash(f'{ticker} created successfully!', 'success')
+        return redirect(url_for('admin_dashboard'))
+
+    return render_template(
+        'admin_create_stock.html',
+        form_token=session['create_stock_token']
+    )

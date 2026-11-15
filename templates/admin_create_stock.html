@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Create Stock{% endblock %}
+
+{% block content %}
+<h1>Create Stock</h1>
+<p>Enter the company, available shares, and starting price.</p>
+
+<form method="POST" action="{{ url_for('admin_create_stock') }}">
+    <input type="hidden" name="_csrf" value="{{ form_token }}">
+
+    <div class="mb-3">
+        <label for="name" class="form-label">Stock / Company Name</label>
+        <input id="name" name="name" type="text"
+               class="form-control" maxlength="100" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="ticker" class="form-label">Ticker</label>
+        <input id="ticker" name="ticker" type="text"
+               class="form-control" maxlength="4"
+               pattern="[A-Za-z]{1,4}" placeholder="AAPL" required>
+        <div class="form-text">Use 1–4 letters.</div>
+    </div>
+
+    <div class="mb-3">
+        <label for="description" class="form-label">
+            Company Description
+        </label>
+        <textarea id="description" name="description"
+                  class="form-control" maxlength="255"
+                  rows="3" required></textarea>
+        <div class="form-text">
+            Used when creating a new company record.
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="quantity" class="form-label">Available Shares</label>
+        <input id="quantity" name="quantity" type="number"
+               class="form-control" min="0.01" max="99999999.99"
+               step="0.01" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="price" class="form-label">
+            Starting Price per Share ($)
+        </label>
+        <input id="price" name="price" type="number"
+               class="form-control" min="0.01" max="99999999.99"
+               step="0.01" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create Stock</button>
+    <a href="{{ url_for('admin_dashboard') }}"
+       class="btn btn-outline-secondary">Cancel</a>
+</form>
+{% endblock %}

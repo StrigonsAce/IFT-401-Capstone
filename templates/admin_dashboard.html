@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Administrator Dashboard{% endblock %}
+
+{% block content %}
+<h1>Administrator Dashboard</h1>
+<p>Welcome, {{ logged_admin.fullName }}.</p>
+
+<div class="d-flex gap-2 mb-4">
+    <a class="btn btn-primary"
+       href="{{ url_for('admin_create_stock') }}">Create Stock</a>
+
+    <a class="btn btn-outline-secondary"
+       href="{{ url_for('index') }}">Home</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Company</th>
+                <th>Ticker</th>
+                <th>Initial Price</th>
+                <th>Market Price</th>
+                <th>Available Shares</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stock in stocks %}
+            <tr>
+                <td>{{ stock.name }}</td>
+                <td>{{ stock.ticker }}</td>
+                <td>${{ '%.2f'|format(stock.initStockPrice) }}</td>
+                <td>${{ '%.2f'|format(stock.currentMarketPrice) }}</td>
+                <td>{{ stock.quantity or 0 }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5">No stocks yet. Create your first stock above.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
