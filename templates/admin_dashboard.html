@@ -5,6 +5,33 @@
 <h1>Administrator Dashboard</h1>
 <p>Welcome, {{ logged_admin.fullName }}.</p>
 
+<div class="card mb-4 mt-3">
+    <div class="card-body">
+    <h5 class="card-title">Market Status</h5>
+    <p class="mb-2">New York Time: <strong>{{ market_info.ny_time }}</strong><br>
+    Status: {% if market_info.is_open %}
+        <span class="badge bg-success">Open</span>
+    {% else %}
+        <span class="badge bg-danger">Closed</span> ({{ market_info.reason }})
+    {% endif %}
+</p>
+<hr>
+<form method="POST" action="{{ url_for('update_market_hours') }}" class="row g-2 align-items-end">
+    <div class="col-auto">
+        <label class="form-label">Open Hour</label>
+        <input type="number" step="0.5" min="0" max="24" name="open_hour" class="form-control" value="{{ market_info.open_hour }}" required>
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Close Hour</label>
+        <input type="number" step="0.5" min="0" max="24" name="close_hour" class="form-control" value="{{ market_info.close_hour }}" required>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Update Hours</button>
+    </div>
+</form>
+</div>
+
+
 <div class="d-flex gap-2 mb-4">
     <a class="btn btn-primary"
        href="{{ url_for('admin_create_stock') }}">Create Stock</a>

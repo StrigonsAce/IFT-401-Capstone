@@ -7,6 +7,7 @@ from sqlalchemy.engine import URL
 from dotenv import load_dotenv
 from flask import Flask, render_template, redirect, url_for, flash, request, session, abort
 from flask_sqlalchemy import SQLAlchemy
+from market_utils import get_market_status
 
 
 load_dotenv()
@@ -34,6 +35,8 @@ class Administrator(db.Model):
     fullName = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), nullable=False)
     adminPassword = db.Column(db.String(255), nullable=False)
+    market_open = db.Column(db.Float, nullable=False, default=9.0)
+    market_close = db.Column(db.Float, nullable=False, default=17.0)
 
 class Company(db.Model):
     companyID = db.Column(db.Integer, nullable=False, primary_key=True)
@@ -92,6 +95,14 @@ class StockInventory(db.Model):
 
 with app.app_context():
     db.create_all()
+
+# hours from database or default 9 AM to 5PM
+@app.context_processor
+def inject_market_status():
+    admin = Administrator.query.first()
+    open_hour = admin.market_open if admin else 9.0
+    close_hour = admin.market_close if admin else 17.0
+    return dict(market_info=get_market_status(open_hour, close_hour))
 
 @app.route('/')
 def index():
@@ -223,10 +234,27 @@ def admin_dashboard():
         flash('Please log in again.', 'error')
         return redirect(url_for('index'))
 
+    stocks = StockInventory.query.all()
     return render_template(
         'admin_dashboard.html',
-        logged_admin=logged_admin
+        logged_admin=logged_admin,
+        stocks=stocks
     )
+
+@app.route('/admin/market_hours', methods=['POST'])
+def update_market_hours():
+    if session.get('role') != 'admin':
+        return redirect(url_for('index'))
+    admin = db.session.get(Administrator, session['admin_id'])
+
+    new_open = float(request.form['open_hour'])
+    new_close = float(request.form['close_hour'])
+    admin.market_open = new_open
+    admin.market_close = new_close
+    db.session.commit()
+    flash('Market hours updated', 'success')
+    return redirect(url_for('admin_dashboard'))
+
 
 @app.route('/admin/stocks/create', methods=['GET', 'POST'])
 def admin_create_stock():
