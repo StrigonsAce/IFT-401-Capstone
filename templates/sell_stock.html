@@ -8,7 +8,7 @@
         <select id="stockID" name="stockID" class="form-select" required>
             {% for stock in stocks %}
             <option value="{{ stock.stockID }}">
-                {{ stock.ticker }} — ${{ stock.currentMarketPrice }}
+                {{ stock.ticker }} — ${{ "%.2f"|format(stock.currentMarketPrice) }}
             </option>
             {% endfor %}
         </select>

@@ -2,17 +2,20 @@ import os
 import secrets
 import re
 import math
+import random
 from datetime import datetime
 from sqlalchemy.engine import URL
 from dotenv import load_dotenv
 from flask import Flask, render_template, redirect, url_for, flash, request, session, abort
 from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
 from market_utils import get_market_status
 
 
 load_dotenv()
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 
 app.config["SQLALCHEMY_DATABASE_URI"] = URL.create(
@@ -104,8 +107,39 @@ def inject_market_status():
     close_hour = admin.market_close if admin else 17.0
     return dict(market_info=get_market_status(open_hour, close_hour))
 
+def randomize_stock_prices():
+    # check if the market is open first
+    admin = Administrator.query.first()
+    open_hour = admin.market_open if admin else 9.0
+    close_hour = admin.market_close if admin else 17.0
+    market_info = get_market_status(open_hour, close_hour)
+    if not market_info["is_open"]:
+        return
+
+    now = datetime.now()
+    try:
+        stocks = StockInventory.query.all()
+        for stock in stocks:
+            # change once every 60 seconds
+            if (now - stock.updatedAt).total_seconds() >= 60:
+                # random percent per stock
+                percent = random.uniform(-5, 10)
+                change = stock.currentMarketPrice * percent / 100
+                new_price = round(stock.currentMarketPrice + change, 2)
+
+                # prevent price from going negative
+                if new_price < 0.01:
+                    new_price = 0.01
+
+                stock.currentMarketPrice = new_price
+                stock.updatedAt = now
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
 @app.route('/')
 def index():
+    randomize_stock_prices()
     stocks = StockInventory.query.all()
     customer = db.session.get(Customer, session['customer_id']) if 'customer_id' in session else None
     return render_template('home.html', stocks=stocks, customer=customer)
@@ -124,7 +158,15 @@ def login():
         return redirect(url_for('admin_dashboard'))
     
     customer = Customer.query.filter_by(email=request.form['email']).first()
-    if customer and customer.custPassword == request.form['password']:
+    try:
+        # check password against hashed password
+        password_ok = customer and bcrypt.check_password_hash(
+            customer.custPassword, request.form['password'])
+    except ValueError:
+        # no plain text passwords
+        password_ok = False
+
+    if password_ok:
         session.clear()
         session['customer_id'] = customer.customerID
         session['role'] = 'customer'
@@ -134,6 +176,49 @@ def login():
     
     flash('Invalid email or password', 'error')
     return redirect(url_for('index'))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        full_name = request.form['fullName'].strip()
+        email = request.form['email'].strip()
+        password = request.form['password']
+
+        if not full_name or not email or not password:
+            flash('fill in all fields', 'error')
+            return redirect(url_for('register'))
+
+        # unique email check
+        existing_customer = Customer.query.filter_by(email=email).first()
+        existing_admin = Administrator.query.filter_by(email=email).first()
+        if existing_customer or existing_admin:
+            flash('This email already exists', 'error')
+            return redirect(url_for('register'))
+
+        try:
+            # generate random 8-digit account number
+            account_num = str(random.randint(11111111, 99999999))
+            while Customer.query.filter_by(accountNum=account_num).first():
+                account_num = str(random.randint(11111111, 99999999))
+
+            # only the hashed password is stored
+            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+            now = datetime.now()
+            db.session.add(Customer(
+                createdAt=now, updatedAt=now,
+                fullName=full_name, accountNum=account_num,
+                email=email, custPassword=hashed_password,
+                availableFunds=0))
+            db.session.commit()
+            flash('Account created. Please log in.', 'success')
+            return redirect(url_for('index'))
+        except Exception:
+            db.session.rollback()
+            flash('Could not create the account', 'error')
+            return redirect(url_for('register'))
+
+    return render_template('sign_up.html')
 
 @app.route('/logout', methods=['POST'])
 def logout():
@@ -178,6 +263,7 @@ def buy():
             flash(f'Error buying stock: {str(e)}', 'error')
             return redirect(url_for('buy'))
 
+    randomize_stock_prices()
     return render_template('buy_stock.html', stocks=StockInventory.query.all())
 
 @app.route('/sell', methods=['GET', 'POST'])
@@ -217,6 +303,7 @@ def sell():
             flash(f'Error selling stock: {str(e)}', 'error')
             return redirect(url_for('sell'))
 
+    randomize_stock_prices()
     return render_template('sell_stock.html', stocks=StockInventory.query.all())
 
 @app.route('/admin')
@@ -234,6 +321,7 @@ def admin_dashboard():
         flash('Please log in again.', 'error')
         return redirect(url_for('index'))
 
+    randomize_stock_prices()
     stocks = StockInventory.query.all()
     return render_template(
         'admin_dashboard.html',
