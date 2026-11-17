@@ -106,6 +106,11 @@ def inject_market_status():
     open_hour = admin.market_open if admin else 9.0
     close_hour = admin.market_close if admin else 17.0
     return dict(market_info=get_market_status(open_hour, close_hour))
+def is_market_open():
+    admin = Administrator.query.first()
+    open_hour = admin.market_open if admin else 9.0
+    close_hour = admin.market_close if admin else 17.0
+    return get_market_status(open_hour, close_hour)
 
 def randomize_stock_prices():
     # check if the market is open first
@@ -233,6 +238,11 @@ def buy():
         flash('Please log in first', 'error')
         return redirect(url_for('index'))
 
+    market = is_market_open()
+    if not market['is_open']:
+        flash('Market is currently closed.', 'error')
+        return redirect(url_for('index'))
+
     if request.method == 'POST':
         try:
             stock = db.session.get(StockInventory, int(request.form['stockID']))
@@ -271,6 +281,11 @@ def sell():
     customer = db.session.get(Customer, session['customer_id']) if 'customer_id' in session else None
     if not customer:
         flash('Please log in first', 'error')
+        return redirect(url_for('index'))
+
+    market = is_market_open()
+    if not market['is_open']:
+        flash('Market is currently closed.', 'error')
         return redirect(url_for('index'))
 
     if request.method == 'POST':
