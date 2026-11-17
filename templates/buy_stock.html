@@ -2,7 +2,7 @@
 {% block title %}Buy Stocks{% endblock %}
 {% block content %}
 <h1>Buy Stocks</h1>
-<form method="POST" action="{{ url_for('buy') }}">
+<form method="POST" action="{{ url_for('buy') }}" onsubmit="return confirm('Are you sure you want to buy ' + parseFloat(this.elements.quantity.value).toFixed(2) + ' shares?')">
     <div class="mb-3">
         <label for="stockID" class="form-label">Select a stock:</label>
         <select id="stockID" name="stockID" class="form-select" required>

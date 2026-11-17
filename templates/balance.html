@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Balance</h1>
 <p>Available funds: ${{ "%.2f"|format(customer.availableFunds) }}</p>
-<form method="POST" action="{{ url_for('balance') }}">
+<form method="POST" action="{{ url_for('balance') }}" onsubmit="return confirm('Are you sure you want to ' + this.elements.updateType.value.toLowerCase() + ' $' + parseFloat(this.elements.updateFunds.value).toFixed(2) + '?')">
     <div class="mb-3">
         <label for="updateType" class="form-label">Deposit or Withdraw</label>
         <select id="updateType" name="updateType" class="form-select" required>
