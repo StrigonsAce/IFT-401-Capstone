@@ -502,3 +502,33 @@ def balance():
             return redirect(url_for('balance'))
 
     return render_template('balance.html', customer=customer)
+
+@app.route('/portfolio')
+#logged in first?
+def portfolio():
+    customer = db.session.get(Customer, session['customer_id']) if 'customer_id' in session else None
+    if not customer:
+        flash('Log in first.', 'error')
+        return redirect(url_for('index'))
+    orders = OrderHistory.query.filter_by(customerID=customer.customerID, status='complete').all()
+    stock_totals = {}
+    for order in orders:
+        if order.stockID not in stock_totals:
+            stock_totals[order.stockID] = 0
+        if order.tradeType == 'buy':
+            stock_totals[order.stockID] += order.quantity
+        else:
+            stock_totals[order.stockID] -= order.quantity
+    #currently owned stocks
+    my_stocks = []
+    for stock_id, quantity in stock_totals.items():
+        if quantity > 0:
+            stock = db.session.get(StockInventory, stock_id)
+            if stock:
+                my_stocks.append({
+                    'ticker': stock.ticker,
+                    'name': stock.name,
+                    'quantity': quantity,
+                    'currentMarketPrice': stock.currentMarketPrice
+                })
+    return render_template('portfolio.html', my_stocks=my_stocks)

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}My Portfolio{% endblock %}
+{% block content %}
+<h1>My Portfolio</h1>
+<table class="table mt-4">
+    <thead>
+        <tr>
+            <th>Ticker</th>
+            <th>Name</th>
+            <th>Quantity</th>
+            <th>Current Price</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for stock in my_stocks %}
+        <tr>
+            <td>{{ stock.ticker }}</td>
+            <td>{{ stock.name }}</td>
+            <td>{{ stock.quantity }}</td>
+            <td>${{ "%.2f"|format(stock.currentMarketPrice) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Home</a>
+{% endblock %}
