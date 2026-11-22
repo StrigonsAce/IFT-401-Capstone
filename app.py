@@ -125,8 +125,8 @@ def randomize_stock_prices():
     try:
         stocks = StockInventory.query.all()
         for stock in stocks:
-            # change once every 60 seconds
-            if (now - stock.updatedAt).total_seconds() >= 60:
+            # change once every 30 seconds
+            if (now - stock.updatedAt).total_seconds() >= 30:
                 # random percent per stock
                 percent = random.uniform(-5, 10)
                 change = stock.currentMarketPrice * percent / 100
@@ -238,10 +238,10 @@ def buy():
         flash('Please log in first', 'error')
         return redirect(url_for('index'))
 
-    market = is_market_open()
-    if not market['is_open']:
-        flash('Market is currently closed.', 'error')
-        return redirect(url_for('index'))
+    # market = is_market_open()
+    # if not market['is_open']:
+    #     flash('Market is currently closed.', 'error')
+    #     return redirect(url_for('index'))
 
     if request.method == 'POST':
         try:
@@ -283,10 +283,10 @@ def sell():
         flash('Please log in first', 'error')
         return redirect(url_for('index'))
 
-    market = is_market_open()
-    if not market['is_open']:
-        flash('Market is currently closed.', 'error')
-        return redirect(url_for('index'))
+    # market = is_market_open()
+    # if not market['is_open']:
+    #     flash('Market is currently closed.', 'error')
+    #     return redirect(url_for('index'))
 
     if request.method == 'POST':
         try:
@@ -447,7 +447,7 @@ def admin_create_stock():
                 flash('A stock with that ticker already exists.', 'error')
                 return redirect(url_for('admin_create_stock'))
 
-            now = datetime.utcnow()
+            now = datetime.now()
 
             company = Company.query.filter_by(ticker=ticker).first()
 
