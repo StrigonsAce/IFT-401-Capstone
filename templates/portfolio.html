@@ -2,6 +2,10 @@
 {% block title %}My Portfolio{% endblock %}
 {% block content %}
 <h1>My Portfolio</h1>
+
+<p><strong>Total Portfolio Value:</strong> ${{ "%.2f"|format(total_value) }}</p>
+<p><strong>Cash Balance:</strong> ${{ "%.2f"|format(customer.availableFunds) }}</p>
+
 <table class="table mt-4">
     <thead>
         <tr>
