@@ -8,6 +8,7 @@
         <button type="submit" class="btn btn-outline-secondary">Log Out</button>
     </form>
 </div>
+<p>Total Portfolio Value: ${{ "%.2f"|format(total_value) }}</p>
 <p>Available funds: ${{ "%.2f"|format(customer.availableFunds) }}</p>
 <a href="{{ url_for('buy') }}" class="btn btn-primary mb-3">Buy Stocks</a>
 <a href="{{ url_for('sell') }}" class="btn btn-primary mb-3">Sell Stocks</a>
