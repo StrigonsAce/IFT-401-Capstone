@@ -338,10 +338,24 @@ def admin_dashboard():
 
     randomize_stock_prices()
     stocks = StockInventory.query.all()
+
+    orders = OrderHistory.query.filter_by(status='complete').order_by(OrderHistory.createdAt.desc()).all()
+    history_data = []
+    for order in orders:
+        stock = db.session.get(StockInventory, order.stockID)
+        history_data.append({
+            'date': order.createdAt.strftime('%Y-%m-%d %I:%M %p'),
+            'type': order.tradeType.capitalize(),
+            'ticker': stock.ticker if stock else 'Unknown',
+            'quantity': order.quantity,
+            'totalValue': order.totalValue
+        })
+
     return render_template(
         'admin_dashboard.html',
         logged_admin=logged_admin,
-        stocks=stocks
+        stocks=stocks,
+        history=history_data
     )
 
 @app.route('/admin/market_hours', methods=['POST'])
@@ -536,14 +550,27 @@ def portfolio():
             stock_totals[order.stockID] -= order.quantity
     #currently owned stocks
     my_stocks = []
+    total_value = 0
     for stock_id, quantity in stock_totals.items():
         if quantity > 0:
             stock = db.session.get(StockInventory, stock_id)
             if stock:
+                total_value += quantity * stock.currentMarketPrice
                 my_stocks.append({
                     'ticker': stock.ticker,
                     'name': stock.name,
                     'quantity': quantity,
                     'currentMarketPrice': stock.currentMarketPrice
                 })
-    return render_template('portfolio.html', my_stocks=my_stocks)
+    history_data = []
+    for order in orders:
+        stock = db.session.get(StockInventory, order.stockID)
+        history_data.append({
+            'date': order.createdAt.strftime('%Y-%m-%d %I:%M %p'),
+            'type': order.tradeType.capitalize(),
+            'ticker': stock.ticker if stock else 'Unknown',
+            'quantity': order.quantity,
+            'totalValue': order.totalValue
+        })
+    
+    return render_template('portfolio.html', my_stocks=my_stocks, history=history_data, total_value=total_value, customer=customer)
