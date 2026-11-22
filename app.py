@@ -238,10 +238,10 @@ def buy():
         flash('Please log in first', 'error')
         return redirect(url_for('index'))
 
-    market = is_market_open()
-    if not market['is_open']:
-        flash('Market is currently closed.', 'error')
-        return redirect(url_for('index'))
+    # market = is_market_open()
+    # if not market['is_open']:
+    #     flash('Market is currently closed.', 'error')
+    #     return redirect(url_for('index'))
 
     if request.method == 'POST':
         try:
@@ -283,10 +283,10 @@ def sell():
         flash('Please log in first', 'error')
         return redirect(url_for('index'))
 
-    market = is_market_open()
-    if not market['is_open']:
-        flash('Market is currently closed.', 'error')
-        return redirect(url_for('index'))
+    # market = is_market_open()
+    # if not market['is_open']:
+    #     flash('Market is currently closed.', 'error')
+    #     return redirect(url_for('index'))
 
     if request.method == 'POST':
         try:
