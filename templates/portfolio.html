@@ -22,5 +22,28 @@
         {% endfor %}
     </tbody>
 </table>
+<h3 class="mt-5">Transaction History</h3>
+<table class="table mt-3">
+<thead>
+    <tr>
+        <th>Date</th>
+        <th>Ticker</th>
+        <th>Type</th>
+        <th>Quantity</th>
+        <th>Total Value</th>
+    </tr>
+</thead>
+<tbody>
+    {% for item in history %}
+    <tr>
+        <td>{{ item.date }}</td>
+        <td>{{ item.ticker }}</td>
+        <td>{{ item.type }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>${{ "%.2f"|format(item.totalValue) }}</td>
+    </tr>
+    {% endfor %}
+</tbody>
+</table>
 <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Home</a>
 {% endblock %}
