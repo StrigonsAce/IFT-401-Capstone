@@ -580,7 +580,7 @@ def portfolio():
         if quantity > 0:
             stock = db.session.get(StockInventory, stock_id)
             if stock:
-                total_value += quantity * stock.currentMarketPrice
+                total_value = quantity * stock.currentMarketPrice
                 my_stocks.append({
                     'ticker': stock.ticker,
                     'name': stock.name,
