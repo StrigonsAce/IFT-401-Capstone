@@ -58,14 +58,6 @@ class Customer(db.Model):
     custPassword = db.Column(db.String(255), nullable=False)
     availableFunds = db.Column(db.Float, nullable=False)
 
-class FinancialTransaction(db.Model):
-    transactionID = db.Column(db.Integer, nullable=False, primary_key=True)
-    companyID = db.Column(db.Integer, db.ForeignKey('company.companyID'), nullable=False)
-    orderID = db.Column(db.Integer, db.ForeignKey('order_history.orderID'), nullable=False)
-    createdAt = db.Column(db.DateTime, nullable=False)
-    accountNum = db.Column(db.String(100), nullable=False)
-    amount = db.Column(db.Float, nullable=False)
-
 class OrderHistory(db.Model):
     orderID = db.Column(db.Integer, nullable=False, primary_key=True)
     stockID = db.Column(db.Integer, db.ForeignKey('stock_inventory.stockID'), nullable=False)
@@ -76,13 +68,6 @@ class OrderHistory(db.Model):
     tradeType = db.Column(db.String(4), nullable=False)
     quantity = db.Column(db.Float, nullable=False)
     totalValue = db.Column(db.Float, nullable=False)
-
-class Portfolio(db.Model):
-    portfolioID = db.Column(db.Integer, nullable=False, primary_key=True)
-    createdAt = db.Column(db.DateTime, nullable=False)
-    updatedAt = db.Column(db.DateTime, nullable=False)
-    customerID = db.Column(db.Integer, db.ForeignKey('customer.customerID'), nullable=False)
-    stockID = db.Column(db.Integer, db.ForeignKey('stock_inventory.stockID'), nullable=False)
 
 class StockInventory(db.Model):
     stockID = db.Column(db.Integer, nullable=False, primary_key=True)
@@ -114,12 +99,12 @@ def is_market_open():
 
 def randomize_stock_prices():
     # check if the market is open first
-   # admin = Administrator.query.first()
-   # open_hour = admin.market_open if admin else 9.0
-   # close_hour = admin.market_close if admin else 17.0
-   # market_info = get_market_status(open_hour, close_hour)
-   # if not market_info["is_open"]:
-   #     return
+    admin = Administrator.query.first()
+    open_hour = admin.market_open if admin else 9.0
+    close_hour = admin.market_close if admin else 17.0
+    market_info = get_market_status(open_hour, close_hour)
+    if not market_info["is_open"]:
+        return
 
     try:
         now = db.session.query(db.func.now()).scalar()
