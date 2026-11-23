@@ -24,7 +24,7 @@
             <td>{{ stock.name }}</td>
             <td>{{ stock.quantity }}</td>
             <td>${{ "%.2f"|format(stock.currentMarketPrice) }}</td>
-            <td>${{ "%.2f"|format(stock.totalValue) }}</td>
+            <td>${{ "%.2f"|format(stock.stockValue) }}</td>
         </tr>
         {% endfor %}
     </tbody>

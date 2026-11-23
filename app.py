@@ -586,6 +586,7 @@ def portfolio():
                     'name': stock.name,
                     'quantity': quantity,
                     'currentMarketPrice': stock.currentMarketPrice
+                    'stockValue': stock.total_value
                 })
     history_data = []
     for order in orders:
