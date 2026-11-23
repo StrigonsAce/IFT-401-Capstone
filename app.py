@@ -566,18 +566,19 @@ def portfolio():
             stock_totals[order.stockID] -= order.quantity
     #currently owned stocks
     my_stocks = []
-    total_value = 0
+    portfolio_total_value = 0
     for stock_id, quantity in stock_totals.items():
         if quantity > 0:
             stock = db.session.get(StockInventory, stock_id)
             if stock:
-                total_value = quantity * stock.currentMarketPrice
+                stock_value = quantity * stock.currentMarketPrice
+                portfolio_total_value += stock_value
                 my_stocks.append({
                     'ticker': stock.ticker,
                     'name': stock.name,
                     'quantity': quantity,
                     'currentMarketPrice': stock.currentMarketPrice,
-                    'stockValue': total_value
+                    'stockValue': stock_value
                 })
     history_data = []
     for order in orders:
@@ -590,4 +591,4 @@ def portfolio():
             'totalValue': order.totalValue
         })
     
-    return render_template('portfolio.html', my_stocks=my_stocks, history=history_data, total_value=total_value, customer=customer)
+    return render_template('portfolio.html', my_stocks=my_stocks, portfolio_total_value=portfolio_total_value, history=history_data, customer=customer)

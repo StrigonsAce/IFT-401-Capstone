@@ -4,8 +4,8 @@
 <h1>My Portfolio</h1>
 
 <p>----------------------------------------</p>
-{% if total_value is not none and total_value is defined %}    
-<p><strong>Total Portfolio Value:</strong> ${{ "%.2f"|format(total_value) }}</p>
+{% if portfolio_total_value is not none and portfolio_total_value is defined %}    
+<p><strong>Total Portfolio Value:</strong> ${{ "%.2f"|format(portfolio_total_value) }}</p>
 {% endif %}
 <p><strong>Cash Balance:</strong> ${{ "%.2f"|format(customer.availableFunds) }}</p>
 
