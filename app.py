@@ -153,8 +153,13 @@ def index():
 def login():
 
     admin = Administrator.query.filter_by(email=request.form['email']).first()
+    try:
+        admin_ok = admin and bcrypt.check_password_hash(
+            admin.adminPassword, request.form['password'])
+    except ValueError:
+        admin_ok = False
 
-    if admin and admin.adminPassword == request.form['password']:
+    if admin_ok:
         session.clear()
         session['admin_id'] = admin.adminID
         session['role'] = 'admin'
