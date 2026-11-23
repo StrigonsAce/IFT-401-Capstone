@@ -40,6 +40,7 @@ class Administrator(db.Model):
     adminPassword = db.Column(db.String(255), nullable=False)
     market_open = db.Column(db.Float, nullable=False, default=9.0)
     market_close = db.Column(db.Float, nullable=False, default=17.0)
+    force_open = db.Column(db.Boolean, nullable=False, default=False)
 
 class Company(db.Model):
     companyID = db.Column(db.Integer, nullable=False, primary_key=True)
@@ -105,19 +106,23 @@ def inject_market_status():
     admin = Administrator.query.first()
     open_hour = admin.market_open if admin else 9.0
     close_hour = admin.market_close if admin else 17.0
-    return dict(market_info=get_market_status(open_hour, close_hour))
+    force = admin.force_open if admin else False
+    return dict(market_info=get_market_status(open_hour, close_hour, force))
+
 def is_market_open():
     admin = Administrator.query.first()
     open_hour = admin.market_open if admin else 9.0
     close_hour = admin.market_close if admin else 17.0
-    return get_market_status(open_hour, close_hour)
+    force = admin.force_open if admin else False
+    return get_market_status(open_hour, close_hour, force)
 
 def randomize_stock_prices():
     # check if the market is open first
     admin = Administrator.query.first()
     open_hour = admin.market_open if admin else 9.0
     close_hour = admin.market_close if admin else 17.0
-    market_info = get_market_status(open_hour, close_hour)
+    force = admin.force_open if admin else False
+    market_info = get_market_status(open_hour, close_hour, force)
     if not market_info["is_open"]:
         return
 
@@ -257,10 +262,10 @@ def buy():
         flash('Please log in first', 'error')
         return redirect(url_for('index'))
 
-    # market = is_market_open()
-    # if not market['is_open']:
-    #     flash('Market is currently closed.', 'error')
-    #     return redirect(url_for('index'))
+    market = is_market_open()
+    if not market['is_open']:
+         flash('Market is currently closed.', 'error')
+         return redirect(url_for('index'))
 
     if request.method == 'POST':
         try:
@@ -302,10 +307,10 @@ def sell():
         flash('Please log in first', 'error')
         return redirect(url_for('index'))
 
-    # market = is_market_open()
-    # if not market['is_open']:
-    #     flash('Market is currently closed.', 'error')
-    #     return redirect(url_for('index'))
+    market = is_market_open()
+    if not market['is_open']:
+        flash('Market is currently closed.', 'error')
+        return redirect(url_for('index'))
 
     if request.method == 'POST':
         try:
@@ -387,6 +392,7 @@ def update_market_hours():
     new_close = float(request.form['close_hour'])
     admin.market_open = new_open
     admin.market_close = new_close
+    admin.force_open = 'force_open' in request.form
     db.session.commit()
     flash('Market hours updated', 'success')
     return redirect(url_for('admin_dashboard'))

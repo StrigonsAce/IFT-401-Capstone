@@ -23,7 +23,7 @@ holidays = {
     "2027-12-25": "Christmas Day"
 }
 
-def get_market_status(open_hour, close_hour):
+def get_market_status(open_hour, close_hour, force_open=False):
     now_ny = datetime.now(NY_TZ)
     current_date_str = now_ny.strftime("%Y-%m-%d")
     is_open = False #this is the default
@@ -32,6 +32,9 @@ def get_market_status(open_hour, close_hour):
     #before anything, check if the current day is listed holiday
     if current_date_str in holidays:
         reason = "Closed for Federal Holiday"
+    elif force_open:
+            is_open = True
+            reason = "Force Open by Admin"
     #then check it it's a weekend
     elif now_ny.weekday() >= 5:
         reason = "Closed for weekend"
