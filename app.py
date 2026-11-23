@@ -59,14 +59,6 @@ class Customer(db.Model):
     custPassword = db.Column(db.String(255), nullable=False)
     availableFunds = db.Column(db.Float, nullable=False)
 
-class FinancialTransaction(db.Model):
-    transactionID = db.Column(db.Integer, nullable=False, primary_key=True)
-    companyID = db.Column(db.Integer, db.ForeignKey('company.companyID'), nullable=False)
-    orderID = db.Column(db.Integer, db.ForeignKey('order_history.orderID'), nullable=False)
-    createdAt = db.Column(db.DateTime, nullable=False)
-    accountNum = db.Column(db.String(100), nullable=False)
-    amount = db.Column(db.Float, nullable=False)
-
 class OrderHistory(db.Model):
     orderID = db.Column(db.Integer, nullable=False, primary_key=True)
     stockID = db.Column(db.Integer, db.ForeignKey('stock_inventory.stockID'), nullable=False)
@@ -77,13 +69,6 @@ class OrderHistory(db.Model):
     tradeType = db.Column(db.String(4), nullable=False)
     quantity = db.Column(db.Float, nullable=False)
     totalValue = db.Column(db.Float, nullable=False)
-
-class Portfolio(db.Model):
-    portfolioID = db.Column(db.Integer, nullable=False, primary_key=True)
-    createdAt = db.Column(db.DateTime, nullable=False)
-    updatedAt = db.Column(db.DateTime, nullable=False)
-    customerID = db.Column(db.Integer, db.ForeignKey('customer.customerID'), nullable=False)
-    stockID = db.Column(db.Integer, db.ForeignKey('stock_inventory.stockID'), nullable=False)
 
 class StockInventory(db.Model):
     stockID = db.Column(db.Integer, nullable=False, primary_key=True)
@@ -126,14 +111,15 @@ def randomize_stock_prices():
     if not market_info["is_open"]:
         return
 
-    now = datetime.now()
     try:
+        now = db.session.query(db.func.now()).scalar()
         stocks = StockInventory.query.all()
         for stock in stocks:
+            age = (now - stock.updatedAt).total_seconds()
+
             # change once every 30 seconds
-            if (now - stock.updatedAt).total_seconds() >= 30:
-                # random percent per stock
-                percent = random.uniform(-5, 10)
+            if age >= 30 or age < 0:
+                percent = random.uniform(-5, 6)
                 change = stock.currentMarketPrice * percent / 100
                 new_price = round(stock.currentMarketPrice + change, 2)
 
@@ -177,8 +163,13 @@ def index():
 def login():
 
     admin = Administrator.query.filter_by(email=request.form['email']).first()
+    try:
+        admin_ok = admin and bcrypt.check_password_hash(
+            admin.adminPassword, request.form['password'])
+    except ValueError:
+        admin_ok = False
 
-    if admin and admin.adminPassword == request.form['password']:
+    if admin_ok:
         session.clear()
         session['admin_id'] = admin.adminID
         session['role'] = 'admin'
@@ -580,12 +571,13 @@ def portfolio():
         if quantity > 0:
             stock = db.session.get(StockInventory, stock_id)
             if stock:
-                total_value += quantity * stock.currentMarketPrice
+                total_value = quantity * stock.currentMarketPrice
                 my_stocks.append({
                     'ticker': stock.ticker,
                     'name': stock.name,
                     'quantity': quantity,
-                    'currentMarketPrice': stock.currentMarketPrice
+                    'currentMarketPrice': stock.currentMarketPrice,
+                    'stockValue': total_value
                 })
     history_data = []
     for order in orders:

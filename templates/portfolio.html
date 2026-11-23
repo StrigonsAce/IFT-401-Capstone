@@ -4,7 +4,9 @@
 <h1>My Portfolio</h1>
 
 <p>----------------------------------------</p>
+{% if total_value is not none and total_value is defined %}    
 <p><strong>Total Portfolio Value:</strong> ${{ "%.2f"|format(total_value) }}</p>
+{% endif %}
 <p><strong>Cash Balance:</strong> ${{ "%.2f"|format(customer.availableFunds) }}</p>
 
 <table class="table mt-4">
@@ -14,6 +16,7 @@
             <th>Name</th>
             <th>Quantity</th>
             <th>Current Price</th>
+            <th>Total Value</th>
         </tr>
     </thead>
     <tbody>
@@ -23,6 +26,7 @@
             <td>{{ stock.name }}</td>
             <td>{{ stock.quantity }}</td>
             <td>${{ "%.2f"|format(stock.currentMarketPrice) }}</td>
+            <td>${{ "%.2f"|format(stock.stockValue) }}</td>
         </tr>
         {% endfor %}
     </tbody>
