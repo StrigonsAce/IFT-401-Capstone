@@ -585,7 +585,7 @@ def portfolio():
                     'ticker': stock.ticker,
                     'name': stock.name,
                     'quantity': quantity,
-                    'currentMarketPrice': stock.currentMarketPrice
+                    'currentMarketPrice': stock.currentMarketPrice,
                     'stockValue': stock.total_value
                 })
     history_data = []
