@@ -114,21 +114,22 @@ def is_market_open():
 
 def randomize_stock_prices():
     # check if the market is open first
-    admin = Administrator.query.first()
-    # open_hour = admin.market_open if admin else 9.0
-    # close_hour = admin.market_close if admin else 17.0
-    # market_info = get_market_status(open_hour, close_hour)
-    # if not market_info["is_open"]:
-    #     return
+   # admin = Administrator.query.first()
+   # open_hour = admin.market_open if admin else 9.0
+   # close_hour = admin.market_close if admin else 17.0
+   # market_info = get_market_status(open_hour, close_hour)
+   # if not market_info["is_open"]:
+   #     return
 
-    now = datetime.now()
     try:
+        now = db.session.query(db.func.now()).scalar()
         stocks = StockInventory.query.all()
         for stock in stocks:
+            age = (now - stock.updatedAt).total_seconds()
+
             # change once every 30 seconds
-            if (now - stock.updatedAt).total_seconds() >= 30:
-                # random percent per stock
-                percent = random.uniform(-5, 10)
+            if age >= 30 or age < 0:
+                percent = random.uniform(-5, 6)
                 change = stock.currentMarketPrice * percent / 100
                 new_price = round(stock.currentMarketPrice + change, 2)
 
