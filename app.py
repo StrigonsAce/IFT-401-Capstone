@@ -147,7 +147,26 @@ def index():
     randomize_stock_prices()
     stocks = StockInventory.query.all()
     customer = db.session.get(Customer, session['customer_id']) if 'customer_id' in session else None
-    return render_template('home.html', stocks=stocks, customer=customer)
+
+    total_value = 0
+    if customer:
+        orders = OrderHistory.query.filter_by(customerID=customer.customerID, status='complete').all()
+        stock_totals = {}
+        for order in orders:
+            if order.stockID not in stock_totals:
+                stock_totals[order.stockID] = 0
+            if order.tradeType == 'buy':
+                stock_totals[order.stockID] += order.quantity
+            else:
+                stock_totals[order.stockID] -= order.quantity
+        
+        for stock_id, quantity in stock_totals.items():
+            if quantity > 0:
+                stock = db.session.get(StockInventory, stock_id)
+                if stock:
+                    total_value += quantity * stock.currentMarketPrice
+
+    return render_template('home.html', stocks=stocks, customer=customer, total_value=total_value)
 
 @app.route('/login', methods=['POST'])
 def login():
