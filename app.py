@@ -566,7 +566,6 @@ def portfolio():
             stock_totals[order.stockID] -= order.quantity
     #currently owned stocks
     my_stocks = []
-    portfolio_value += total_value
     total_value = 0
     for stock_id, quantity in stock_totals.items():
         if quantity > 0:
@@ -591,4 +590,4 @@ def portfolio():
             'totalValue': order.totalValue
         })
     
-    return render_template('portfolio.html', my_stocks=my_stocks, history=history_data, portfolio_value=portfolio_value, customer=customer)
+    return render_template('portfolio.html', my_stocks=my_stocks, history=history_data, total_value=total_value, customer=customer)
