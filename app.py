@@ -115,11 +115,11 @@ def is_market_open():
 def randomize_stock_prices():
     # check if the market is open first
     admin = Administrator.query.first()
-    open_hour = admin.market_open if admin else 9.0
-    close_hour = admin.market_close if admin else 17.0
-    market_info = get_market_status(open_hour, close_hour)
-    if not market_info["is_open"]:
-        return
+    # open_hour = admin.market_open if admin else 9.0
+    # close_hour = admin.market_close if admin else 17.0
+    # market_info = get_market_status(open_hour, close_hour)
+    # if not market_info["is_open"]:
+    #     return
 
     now = datetime.now()
     try:
